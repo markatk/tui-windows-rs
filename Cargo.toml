@@ -6,7 +6,7 @@ authors = ["MarkAtk"]
 edition = "2018"
 license = "MIT"
 keywords = ["tui", "windows"]
-repository = "https://github.com/markatk/tui-windows.git"
+repository = "https://github.com/markatk/tui-windows-rs.git"
 readme = "README.md"
 
 [dependencies]

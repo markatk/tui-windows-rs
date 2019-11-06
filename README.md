@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/tui-windows.svg)](https://crates.io/crates/tui-windows)
 [![Documentation](https://docs.rs/tui-windows/badge.svg)](https://docs.rs/crate/tui-windows)
-[![Build Status](https://travis-ci.org/markatk/tui-windows.svg?branch=master)](https://travis-ci.org/markatk/tui-windows)
+[![Build Status](https://travis-ci.org/markatk/tui-windows-rs.svg?branch=master)](https://travis-ci.org/markatk/tui-windows-rs)
 
 ## Description
 
