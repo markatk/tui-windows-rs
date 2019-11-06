@@ -6,7 +6,7 @@
 
 ## Description
 
-[tui](https://crates.io/crates/tui) abstraction to handle multiple windows and their rendering.
+[tui](https://crates.io/crates/tui) abstraction to handle multiple windows (not the OS) and their rendering.
 
 ## Usage
 

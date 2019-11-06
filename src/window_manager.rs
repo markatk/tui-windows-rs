@@ -1,5 +1,5 @@
 /*
- * File: src/lib.rs
+ * File: src/window_manager.rs
  * Date: 06.11.2019
  * Author: MarkAtk
  *
@@ -26,14 +26,22 @@
  * SOFTWARE.
  */
 
-mod window_manager;
+use tui::Terminal;
+use tui::backend::Backend;
 
-pub use window_manager::WindowManager;
+pub struct WindowManager<T> where T: Backend {
+    terminal: Terminal<T>
+}
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+impl<T> WindowManager<T> where T: Backend {
+    pub fn new(terminal: Terminal<T>) -> WindowManager<T> {
+
+        WindowManager {
+            terminal
+        }
+    }
+
+    pub fn run(&mut self) -> Result<(), std::io::Error> {
+        Ok(())
     }
 }
