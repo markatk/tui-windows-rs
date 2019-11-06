@@ -1,0 +1,13 @@
+[package]
+name = "tui-windows"
+description = "tui abstraction to handle multiple windows and their rendering"
+version = "0.1.0"
+authors = ["MarkAtk"]
+edition = "2018"
+license = "MIT"
+keywords = ["tui", "windows"]
+repository = "https://github.com/markatk/tui-windows.git"
+readme = "README.md"
+
+[dependencies]
+tui = "0.6.2"
