@@ -1,6 +1,6 @@
 /*
- * File: examples/crossterm.rs
- * Date: 06.11.2019
+ * File: src/window.rs
+ * Date: 07.11.2019
  * Author: MarkAtk
  *
  * MIT License
@@ -26,24 +26,27 @@
  * SOFTWARE.
  */
 
-use std::io::{stdout, Stdout, Write};
 use tui::Terminal;
-use tui::backend::CrosstermBackend;
-use tui_windows::WindowManager;
-use crossterm::execute;
-use crossterm::event::KeyEvent;
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+use tui::backend::Backend;
+use crate::{Event, EventResult};
 
-fn main() {
-    let mut stdout = stdout();
-    if let Err(err) = execute!(stdout, EnterAlternateScreen) {
-        println!("{}", err);
+pub trait Window<T, I> where T: Backend, I: Send {
+    fn render(&mut self, terminal: &mut Terminal<T>) -> Result<(), std::io::Error>;
 
-        return;
+    fn handle_key_event(&mut self, _event: I) -> EventResult<T, I> {
+        // do nothing
+        EventResult::new()
     }
 
-    let backend = CrosstermBackend::new(stdout);
-    let terminal = Terminal::new(backend).unwrap();
+    fn handle_tick(&mut self, _tick_rate: u64) -> EventResult<T, I> {
+        // do nothing
+        EventResult::new()
+    }
 
-    let window_manager: WindowManager<CrosstermBackend<Stdout>, KeyEvent> = WindowManager::new(terminal);
+    fn handle_event(&mut self, _event: Event<I>) -> EventResult<T, I> {
+        // do nothing
+        EventResult::new()
+    }
+
+    fn should_close(&self) -> bool;
 }

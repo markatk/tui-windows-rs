@@ -10,14 +10,14 @@ repository = "https://github.com/markatk/tui-windows-rs.git"
 readme = "README.md"
 
 [dependencies]
-tui = "0.6.2"
+tui = "0.8.0"
 
 [dev-dependencies]
-crossterm = "0.9.6"
-termion = "1.5"
+crossterm = "0.14.2"
+termion = "1.5.4"
 
 [dev-dependencies.tui]
-version = "0.6.2"
+version = "0.8.0"
 features = ["crossterm", "termion"]
 
 [[example]]

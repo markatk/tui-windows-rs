@@ -26,9 +26,13 @@
  * SOFTWARE.
  */
 
+mod event;
+mod window;
 mod window_manager;
 
-pub use window_manager::WindowManager;
+pub use event::*;
+pub use window::*;
+pub use window_manager::*;
 
 #[cfg(test)]
 mod tests {

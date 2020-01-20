@@ -29,7 +29,8 @@
 use tui::Terminal;
 use tui::backend::TermionBackend;
 use tui_windows::WindowManager;
-use termion::raw::IntoRawMode;
+use termion::raw::{IntoRawMode, RawTerminal};
+use termion::event::Key;
 
 fn main() {
     let stdout = std::io::stdout().into_raw_mode().unwrap();
@@ -37,5 +38,5 @@ fn main() {
 
     let terminal = Terminal::new(backend).unwrap();
 
-    let window_manager = WindowManager::new(terminal);
+    let window_manager: WindowManager<TermionBackend<RawTerminal<std::io::Stdout>>, Key> = WindowManager::new(terminal);
 }

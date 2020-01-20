@@ -1,6 +1,6 @@
 /*
- * File: examples/crossterm.rs
- * Date: 06.11.2019
+ * File: src/event.rs
+ * Date: 07.11.2019
  * Author: MarkAtk
  *
  * MIT License
@@ -26,24 +26,24 @@
  * SOFTWARE.
  */
 
-use std::io::{stdout, Stdout, Write};
-use tui::Terminal;
-use tui::backend::CrosstermBackend;
-use tui_windows::WindowManager;
-use crossterm::execute;
-use crossterm::event::KeyEvent;
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+use tui::backend::Backend;
+use crate::Window;
 
-fn main() {
-    let mut stdout = stdout();
-    if let Err(err) = execute!(stdout, EnterAlternateScreen) {
-        println!("{}", err);
+pub enum Event<I> {
+    Input(I),
+    Tick
+}
 
-        return;
+pub struct EventResult<T, I> where T: Backend, I: Send {
+    pub remove: bool,
+    pub child: Option<Box<dyn Window<T, I>>>
+}
+
+impl<T, I> EventResult<T, I> where T: Backend, I: Send {
+    pub fn new() -> EventResult<T, I> {
+        EventResult {
+            remove: false,
+            child: None
+        }
     }
-
-    let backend = CrosstermBackend::new(stdout);
-    let terminal = Terminal::new(backend).unwrap();
-
-    let window_manager: WindowManager<CrosstermBackend<Stdout>, KeyEvent> = WindowManager::new(terminal);
 }
