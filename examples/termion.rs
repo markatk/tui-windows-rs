@@ -26,8 +26,12 @@
  * SOFTWARE.
  */
 
-use tui_windows::WindowManager;
+use tui_windows::{WindowManager, WindowManagerSettings};
 
 fn main() {
-    let _window_manager = WindowManager::new().unwrap();
+    let _window_manager = WindowManager::new(WindowManagerSettings {
+        show_cursor: true,
+        raw_mode: true,
+        alternate_screen: true
+    }).unwrap();
 }

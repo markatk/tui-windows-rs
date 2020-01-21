@@ -26,8 +26,66 @@
  * SOFTWARE.
  */
 
-use tui_windows::WindowManager;
+use std::io::{Stdout, Error};
+use tui_windows::{WindowManager, WindowManagerSettings, Window, EventResult};
+use tui::Terminal;
+use tui::widgets::{Widget, Paragraph, Block, Borders, Text};
+use tui::layout::{Layout, Direction, Constraint};
+use tui::backend::CrosstermBackend;
+use crossterm::event::{KeyEvent, KeyCode};
+
+struct MainWindow {
+    should_close: bool
+}
+
+impl MainWindow {
+    pub fn new() -> Box<Self> {
+        Box::new(MainWindow {
+            should_close: false
+        })
+    }
+}
+
+impl Window<CrosstermBackend<Stdout>, KeyEvent> for MainWindow {
+    fn render(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<(), Error> {
+        terminal.draw(|mut f| {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Min(0)
+                ].as_ref())
+                .split(f.size());
+
+            Paragraph::new([Text::raw("Example crossterm window")].iter())
+                .block(Block::default()
+                    .title("tui-windows")
+                    .borders(Borders::ALL))
+                .render(&mut f, chunks[0]);
+        })
+    }
+
+    fn handle_key_event(&mut self, event: KeyEvent) -> EventResult<CrosstermBackend<Stdout>, KeyEvent> {
+        match event {
+            KeyEvent { code: KeyCode::Esc, modifiers: _ } => self.should_close = true,
+            _ => ()
+        }
+
+        EventResult::new()
+    }
+
+    fn should_close(&self) -> bool {
+        self.should_close
+    }
+}
 
 fn main() {
-    let _window_manager = WindowManager::new().unwrap();
+    let mut window_manager = WindowManager::new(WindowManagerSettings {
+        show_cursor: true,
+        raw_mode: true,
+        alternate_screen: true
+    }).unwrap();
+
+    let window = MainWindow::new();
+
+    window_manager.run(window).unwrap();
 }

@@ -27,7 +27,7 @@
  */
 
 use std::thread;
-use std::io::{self};
+use std::io::{self, Write};
 use std::time::Duration;
 use std::sync::mpsc::{self, Sender, Receiver};
 use tui::Terminal;
@@ -39,22 +39,44 @@ use termion::event::Key;
 
 #[cfg(feature = "crossterm-backend")]
 use crossterm::event::KeyEvent;
+#[cfg(feature = "crossterm-backend")]
+use crossterm::{terminal, execute};
 
-pub struct WindowManager<T, I> where T: Backend, I: Send + 'static {
+#[derive(Debug)]
+pub struct WindowManagerSettings {
+    pub show_cursor: bool,
+    pub raw_mode: bool,
+    pub alternate_screen: bool
+}
+
+impl Default for WindowManagerSettings {
+    fn default() -> Self {
+        WindowManagerSettings {
+            show_cursor: true,
+            raw_mode: false,
+            alternate_screen: false
+        }
+    }
+}
+
+pub struct WindowManager<T, I> where T: Backend + Write, I: Send + 'static {
     pub tick_rate: u64,
 
     terminal: Terminal<T>,
     tx: Sender<Event<I>>,
     rx: Receiver<Event<I>>,
     windows: Vec<Box<dyn Window<T, I>>>,
-
-    cursor_state: bool
+    settings: WindowManagerSettings
 }
 
-impl<T, I> WindowManager<T, I> where T: Backend, I: Send + 'static {
-    pub fn new_with_backend(backend: T) -> Result<WindowManager<T, I>, io::Error> {
+impl<T, I> WindowManager<T, I> where T: Backend + Write, I: Send + 'static {
+    pub fn new_with_backend(backend: T, settings: WindowManagerSettings) -> Result<Self, io::Error> {
         let (tx, rx) = mpsc::channel();
-        let terminal = Terminal::new(backend)?;
+        let mut terminal = Terminal::new(backend)?;
+
+        if settings.show_cursor == false {
+            terminal.hide_cursor()?;
+        }
 
         Ok(WindowManager {
             tick_rate: 250,
@@ -62,18 +84,8 @@ impl<T, I> WindowManager<T, I> where T: Backend, I: Send + 'static {
             tx,
             rx,
             windows: vec!(),
-            cursor_state: true
+            settings
         })
-    }
-
-    pub fn show_cursor(&mut self) -> Result<(), io::Error> {
-        self.cursor_state = true;
-        self.terminal.show_cursor()
-    }
-
-    pub fn hide_cursor(&mut self) -> Result<(), io::Error> {
-        self.cursor_state = false;
-        self.terminal.hide_cursor()
     }
 
     pub fn get_tx(&self) -> &Sender<Event<I>> {
@@ -118,7 +130,7 @@ impl<T, I> WindowManager<T, I> where T: Backend, I: Send + 'static {
                     // TODO: Add optional escape key handling?
                     Ok(Event::Input(event)) => Some(window.handle_key_event(event)),
                     Ok(Event::Tick) => Some(window.handle_tick(self.tick_rate)),
-                    Ok(event) => Some(window.handle_event(event)),
+                    //Ok(event) => Some(window.handle_event(event)),
                     _ => None
                 };
 
@@ -140,11 +152,29 @@ impl<T, I> WindowManager<T, I> where T: Backend, I: Send + 'static {
             self.windows.push(child);
         }
     }
+
+    #[cfg(feature = "termion-backend")]
+    fn cleanup(&mut self) {
+
+    }
+
+    #[cfg(feature = "crossterm-backend")]
+    fn cleanup(&mut self) {
+        if self.settings.raw_mode {
+            terminal::disable_raw_mode().unwrap();
+        }
+
+        if self.settings.alternate_screen {
+            execute!(io::stdout(), terminal::LeaveAlternateScreen).unwrap();
+        }
+    }
 }
 
-impl<T, I> Drop for WindowManager<T, I> where T: Backend, I: Send + 'static {
+impl<T, I> Drop for WindowManager<T, I> where T: Backend + Write, I: Send + 'static {
     fn drop(&mut self) {
-        if self.cursor_state == false {
+        self.cleanup();
+
+        if self.settings.show_cursor == false {
             self.terminal.show_cursor().unwrap();
         }
     }
@@ -152,20 +182,33 @@ impl<T, I> Drop for WindowManager<T, I> where T: Backend, I: Send + 'static {
 
 #[cfg(feature = "termion-backend")]
 impl WindowManager<backend::TermionBackend<io::Stdout>, Key> {
-    pub fn new() -> Result<WindowManager<backend::TermionBackend<io::Stdout>, Key>, io::Error> {
+    pub fn new(settings: WindowManagerSettings) -> Result<Self, io::Error> {
         let stdout = io::stdout();
         let backend = backend::TermionBackend::new(stdout);
 
-        WindowManager::new_with_backend(backend)
+        WindowManager::new_with_backend(backend, settings)
     }
 }
 
 #[cfg(feature = "crossterm-backend")]
 impl WindowManager<backend::CrosstermBackend<io::Stdout>, KeyEvent> {
-    pub fn new() -> Result<WindowManager<backend::CrosstermBackend<io::Stdout>, KeyEvent>, io::Error> {
-        let stdout = io::stdout();
+    pub fn new(settings: WindowManagerSettings) -> Result<Self, io::Error> {
+        if settings.raw_mode {
+            if let Err(err) = terminal::enable_raw_mode() {
+                return Err(io::Error::new(io::ErrorKind::Other, err));
+            }
+        }
+
+        let mut stdout = io::stdout();
+
+        if settings.alternate_screen {
+            if let Err(err) = execute!(stdout, terminal::EnterAlternateScreen) {
+                return Err(io::Error::new(io::ErrorKind::Other, err));
+            }
+        }
+
         let backend = backend::CrosstermBackend::new(stdout);
 
-        WindowManager::new_with_backend(backend)
+        WindowManager::new_with_backend(backend, settings)
     }
 }
