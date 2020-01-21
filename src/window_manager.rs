@@ -27,11 +27,18 @@
  */
 
 use std::thread;
+use std::io::{self};
 use std::time::Duration;
 use std::sync::mpsc::{self, Sender, Receiver};
 use tui::Terminal;
-use tui::backend::Backend;
+use tui::backend::{self, Backend};
 use crate::{Event, Window, EventResult};
+
+#[cfg(feature = "termion-backend")]
+use termion::event::Key;
+
+#[cfg(feature = "crossterm-backend")]
+use crossterm::event::KeyEvent;
 
 pub struct WindowManager<T, I> where T: Backend, I: Send + 'static {
     pub tick_rate: u64,
@@ -39,20 +46,34 @@ pub struct WindowManager<T, I> where T: Backend, I: Send + 'static {
     terminal: Terminal<T>,
     tx: Sender<Event<I>>,
     rx: Receiver<Event<I>>,
-    windows: Vec<Box<dyn Window<T, I>>>
+    windows: Vec<Box<dyn Window<T, I>>>,
+
+    cursor_state: bool
 }
 
 impl<T, I> WindowManager<T, I> where T: Backend, I: Send + 'static {
-    pub fn new(terminal: Terminal<T>) -> WindowManager<T, I> {
+    pub fn new_with_backend(backend: T) -> Result<WindowManager<T, I>, io::Error> {
         let (tx, rx) = mpsc::channel();
+        let terminal = Terminal::new(backend)?;
 
-        WindowManager {
+        Ok(WindowManager {
             tick_rate: 250,
             terminal,
             tx,
             rx,
-            windows: vec!()
-        }
+            windows: vec!(),
+            cursor_state: true
+        })
+    }
+
+    pub fn show_cursor(&mut self) -> Result<(), io::Error> {
+        self.cursor_state = true;
+        self.terminal.show_cursor()
+    }
+
+    pub fn hide_cursor(&mut self) -> Result<(), io::Error> {
+        self.cursor_state = false;
+        self.terminal.hide_cursor()
     }
 
     pub fn get_tx(&self) -> &Sender<Event<I>> {
@@ -118,5 +139,33 @@ impl<T, I> WindowManager<T, I> where T: Backend, I: Send + 'static {
         if let Some(child) = event_result.child {
             self.windows.push(child);
         }
+    }
+}
+
+impl<T, I> Drop for WindowManager<T, I> where T: Backend, I: Send + 'static {
+    fn drop(&mut self) {
+        if self.cursor_state == false {
+            self.terminal.show_cursor().unwrap();
+        }
+    }
+}
+
+#[cfg(feature = "termion-backend")]
+impl WindowManager<backend::TermionBackend<io::Stdout>, Key> {
+    pub fn new() -> Result<WindowManager<backend::TermionBackend<io::Stdout>, Key>, io::Error> {
+        let stdout = io::stdout();
+        let backend = backend::TermionBackend::new(stdout);
+
+        WindowManager::new_with_backend(backend)
+    }
+}
+
+#[cfg(feature = "crossterm-backend")]
+impl WindowManager<backend::CrosstermBackend<io::Stdout>, KeyEvent> {
+    pub fn new() -> Result<WindowManager<backend::CrosstermBackend<io::Stdout>, KeyEvent>, io::Error> {
+        let stdout = io::stdout();
+        let backend = backend::CrosstermBackend::new(stdout);
+
+        WindowManager::new_with_backend(backend)
     }
 }

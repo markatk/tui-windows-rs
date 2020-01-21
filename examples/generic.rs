@@ -1,11 +1,11 @@
 /*
- * File: examples/crossterm.rs
- * Date: 06.11.2019
+ * File: examples/generic.rs
+ * Date: 20.01.2020
  * Author: MarkAtk
  *
  * MIT License
  *
- * Copyright (c) 2019 MarkAtk
+ * Copyright (c) 2020 MarkAtk
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -26,8 +26,12 @@
  * SOFTWARE.
  */
 
+use std::io::{stdout, Stdout};
 use tui_windows::WindowManager;
+use tui::backend::CrosstermBackend;
+use crossterm::event::KeyEvent;
 
 fn main() {
-    let _window_manager = WindowManager::new().unwrap();
+    let backend = CrosstermBackend::new(stdout());
+    let _window_manager: WindowManager<CrosstermBackend<Stdout>, KeyEvent> = WindowManager::new_with_backend(backend).unwrap();
 }
